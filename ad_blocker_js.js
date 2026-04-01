@@ -24,7 +24,7 @@ setInterval(() => {
         // REKLAM VARSA: Sürətləndir və manualPaused-u sıfırla
         if (ad) {
             video.muted = true;
-            video.playbackRate = 100; // video sürəti 16
+            video.playbackRate = 16; // video sürəti 16
             manualPaused = false;
             if (isFinite(video.duration)) video.currentTime = video.duration;
             if (skipBtn) skipBtn.click();
