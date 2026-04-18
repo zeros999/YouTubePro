@@ -54,15 +54,15 @@ setInterval(() => {
         ".ytp-ad-image-overlay",
         ".ytp-ad-overlay-image",
         "#masthead-ad",
-        "ytd-companion-slot-renderer",
-        ".mobile-topbar-header-endpoint" // Bayaq şəkildə göstərdiyin düymə üçün
+        "ytd-companion-slot-renderer"
     ];
 
+    // Mötərizə xətası burada idi, düzəldildi:
     selectors.forEach(s => {
         document.querySelectorAll(s).forEach(el => el.remove());
     });
 
-    // 4. "Aç" və ya "Open" yazılan butonları sil
+    // 4. "Aç" və ya "Open" yazılan elementləri təmizlə
     document.querySelectorAll('button, a').forEach(el => {
         const txt = el.innerText.toLowerCase();
         if (txt.includes('aç') || txt.includes('open')) {
