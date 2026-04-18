@@ -1,98 +1,84 @@
 let manualPaused = false;
 
-// 1. Klik hadisəsini və manual pauzanı izlə
-document.addEventListener('click', () => {
-    const video = document.querySelector('video');
-    if (video) {
-        setTimeout(() => { manualPaused = video.paused; }, 100);
-    }
-}, true);
-
-// 2. Fon rejimi bloklanmasını ləğv et
+// 1. Fon və gizlilik sığortası
 Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
 Object.defineProperty(document, 'hidden', { get: () => false });
 
-// 3. TAM EKRAN VƏ AVTOMATİK FIRLATMA FUNKSİYASI
-async function toggleFullscreen() {
+// 2. MƏHVETMƏ VƏ TAM EKRAN FUNKSİYASI
+function goAbsoluteFullscreen() {
     const video = document.querySelector('video');
-    // YouTube-da tam ekran üçün adətən pleyer konteynerini seçmək daha yaxşıdır
-    const playerContainer = document.querySelector('.html5-video-player') || video;
-
     if (!video) return;
 
-    try {
-        if (!document.fullscreenElement) {
-            // Tam ekrana keçid
-            if (playerContainer.requestFullscreen) {
-                await playerContainer.requestFullscreen();
-            } else if (playerContainer.webkitRequestFullscreen) {
-                await playerContainer.webkitRequestFullscreen();
-            }
+    if (!document.fullscreenElement) {
+        // Videonu pəncərədən ayırıb bütün ekranı tutmağa məcbur edirik
+        video.style.setProperty("position", "fixed", "important");
+        video.style.setProperty("top", "0", "important");
+        video.style.setProperty("left", "0", "important");
+        video.style.setProperty("width", "100vw", "important");
+        video.style.setProperty("height", "100vh", "important");
+        video.style.setProperty("z-index", "2147483647", "important"); // Ən yuxarı qat
+        video.style.setProperty("object-fit", "contain", "important");
+        video.style.setProperty("background", "black", "important");
 
-            // EKRANI AVTOMATİK FIRLAT (Landscape rejiminə məcbur et)
-            if (screen.orientation && screen.orientation.lock) {
-                await screen.orientation.lock('landscape').catch(err => {
-                    console.log("Fırlatma dəstəklənmir, amma tam ekran aktivdir.");
-                });
-            }
-        } else {
-            // Tam ekrandan çıxış
-            if (document.exitFullscreen) {
-                await document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                await document.webkitExitFullscreen();
-            }
+        // Brauzeri tam ekrana keçməyə məcbur et
+        const requestMethod = video.requestFullscreen || video.webkitRequestFullscreen || video.mozRequestFullScreen || video.msRequestFullscreen;
+        if (requestMethod) {
+            requestMethod.call(video).then(() => {
+                // Ekranı fırlat (dəstəkləyən cihazlarda)
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+            });
         }
-    } catch (error) {
-        console.error("Tam ekran xətası:", error);
+    } else {
+        // Köhnə vəziyyətə qaytar
+        video.style.position = "";
+        video.style.top = "";
+        video.style.left = "";
+        video.style.width = "";
+        video.style.height = "";
+        video.style.zIndex = "";
+        if (document.exitFullscreen) document.exitFullscreen();
     }
 }
 
-// 4. Reklam bloklama və təmizlik dövrü
+// 3. YOUTUBE DÜYMƏSİNİ ƏLƏ KEÇİRMƏK
+function hookButton() {
+    const fsButton = document.querySelector('.ytp-fullscreen-button');
+    if (fsButton && !fsButton.dataset.hacked) {
+        // YouTube-un öz klik funksiyasını ləğv edirik
+        fsButton.replaceWith(fsButton.cloneNode(true)); 
+        const newBtn = document.querySelector('.ytp-fullscreen-button');
+        
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            goAbsoluteFullscreen();
+        });
+        newBtn.dataset.hacked = "true";
+    }
+}
+
 setInterval(() => {
+    hookButton(); // Düyməni daim izlə və bizimki ilə əvəz et
+    
     const video = document.querySelector('video');
     const ad = document.querySelector('.ad-showing, .ad-interrupting');
     const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
-    const fsButton = document.querySelector('.ytp-fullscreen-button');
-
-    // Tam ekran düyməsinə bizim funksiyanı bağla (əgər hələ bağlanmayıbsa)
-    if (fsButton && !fsButton.dataset.hooked) {
-        fsButton.addEventListener('click', (e) => {
-            e.stopImmediatePropagation(); // YouTube-un öz kodunun qarışmasına mane ol
-            toggleFullscreen();
-        }, true);
-        fsButton.dataset.hooked = "true";
-    }
 
     if (video) {
+        // REKLAM BLOKER
         if (ad) {
             video.muted = true;
             video.playbackRate = 16;
-            manualPaused = false;
             if (skipBtn) skipBtn.click();
             if (isFinite(video.duration)) video.currentTime = video.duration;
         } else {
             if (video.muted && !video.paused) video.muted = false;
             if (video.playbackRate > 2) video.playbackRate = 1;
-            if (video.paused && !manualPaused && !video.ended) {
-                video.play().catch(() => {});
-            }
         }
     }
 
-    // Bannerləri və "Aç" düymələrini təmizlə
-    const selectors = [
-        ".ytp-ad-overlay-container", "#player-ads", "ytd-ad-slot-renderer",
-        "ytm-ad-slot-renderer", ".ytp-ad-image-overlay", "#masthead-ad"
-    ];
-    selectors.forEach(s => {
-        document.querySelectorAll(s).forEach(el => el.remove());
-    });
-
-    document.querySelectorAll('button, a').forEach(el => {
-        const txt = el.innerText.toLowerCase();
-        if (txt.includes('aç') || txt.includes('open')) {
-            el.remove();
-        }
-    });
-}, 250);
+    // Əlavə maneələri (banner, düymə və s.) təmizlə
+    document.querySelectorAll(".ytp-ad-overlay-container, #player-ads, .mobile-topbar-header-endpoint").forEach(el => el.remove());
+}, 500);
