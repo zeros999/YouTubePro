@@ -20,6 +20,13 @@ setInterval(() => {
     const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
 
     if (video) {
+        // --- ƏLAVƏ OLUNAN HİSSƏ: EKRANI TAM DOLDUR ---
+        // Videonun kənarlarındakı qara boşluqları yox edir
+        if (video.style.objectFit !== "cover") {
+            video.style.objectFit = "cover";
+        }
+        // --------------------------------------------
+
         // REKLAM VARSA
         if (ad) {
             video.muted = true;
@@ -54,10 +61,10 @@ setInterval(() => {
         ".ytp-ad-image-overlay",
         ".ytp-ad-overlay-image",
         "#masthead-ad",
-        "ytd-companion-slot-renderer"
+        "ytd-companion-slot-renderer",
+        ".mobile-topbar-header-endpoint" // Yuxarıdakı "Tətbiqi Aç" düyməsi üçün
     ];
 
-    // Mötərizə xətası burada idi, düzəldildi:
     selectors.forEach(s => {
         document.querySelectorAll(s).forEach(el => el.remove());
     });
@@ -65,7 +72,7 @@ setInterval(() => {
     // 4. "Aç" və ya "Open" yazılan elementləri təmizlə
     document.querySelectorAll('button, a').forEach(el => {
         const txt = el.innerText.toLowerCase();
-        if (txt.includes('aç') || txt.includes('open')) {
+        if (txt.includes('tətbiqi aç') || txt.includes('uygulamada aç') || txt.includes('open app')) {
             el.remove();
         }
     });
