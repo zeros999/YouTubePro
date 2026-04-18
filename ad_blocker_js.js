@@ -10,7 +10,7 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// 2. YouTube-un səhifə gizlənmə hadisələrini blokla
+// 2. Səhifə gizlənmə hadisələrini blokla
 Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
 Object.defineProperty(document, 'hidden', { get: () => false });
 
@@ -19,57 +19,50 @@ setInterval(() => {
     const ad = document.querySelector('.ad-showing, .ad-interrupting');
     const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
 
-    if (video) {
-        // --- ƏLAVƏ OLUNAN HİSSƏ: EKRANI TAM DOLDUR ---
-        // Videonun kənarlarındakı qara boşluqları yox edir
-        if (video.style.objectFit !== "cover") {
-            video.style.objectFit = "cover";
-        }
-        // --------------------------------------------
+    // --- ARXA FONU QARALTMA HİSSƏSİ ---
+    // Bütün səhifənin və pleyerin arxa fonunu məcburi qara edir
+    document.body.style.backgroundColor = "black";
+    const playerContainer = document.querySelector('#player-container, .player-container, #player');
+    if (playerContainer) {
+        playerContainer.style.backgroundColor = "black";
+    }
+    // YouTube-un o rəngli "Ambient Mode" (Cinematic) effektini söndürür
+    const cinematicContainer = document.querySelector('#cinematic-container, .cinematic-container');
+    if (cinematicContainer) cinematicContainer.remove();
+    // ---------------------------------
 
+    if (video) {
         // REKLAM VARSA
         if (ad) {
             video.muted = true;
             video.playbackRate = 16; 
             manualPaused = false;
-            
-            if (skipBtn) {
-                skipBtn.click();
-                console.log("Reklam avtomatik atlanıldı.");
-            }
-            
+            if (skipBtn) skipBtn.click();
             if (isFinite(video.duration)) video.currentTime = video.duration;
         } 
         // REKLAM YOXDURSA
         else {
             if (video.muted && !video.paused) video.muted = false;
             if (video.playbackRate > 2) video.playbackRate = 1;
-
             if (video.paused && !manualPaused && !video.ended) {
                 video.play().catch(() => {});
             }
         }
     }
 
-    // 3. BANNER VƏ DİGƏR REKLAMLARI SİLMƏK
+    // 3. REKLAMLARI VƏ BANNERLƏRİ SİL
     const selectors = [
-        ".ytp-ad-overlay-container",
-        "#player-ads",
-        "ytd-ad-slot-renderer",
-        "ytm-ad-slot-renderer",
-        "ytm-promoted-item-renderer",
-        ".ytp-ad-image-overlay",
-        ".ytp-ad-overlay-image",
-        "#masthead-ad",
-        "ytd-companion-slot-renderer",
-        ".mobile-topbar-header-endpoint" // Yuxarıdakı "Tətbiqi Aç" düyməsi üçün
+        ".ytp-ad-overlay-container", "#player-ads", "ytd-ad-slot-renderer",
+        "ytm-ad-slot-renderer", "ytm-promoted-item-renderer", ".ytp-ad-image-overlay",
+        ".ytp-ad-overlay-image", "#masthead-ad", "ytd-companion-slot-renderer",
+        ".mobile-topbar-header-endpoint" // O yuxarıdakı "Tətbiqi Aç" düyməsi
     ];
 
     selectors.forEach(s => {
         document.querySelectorAll(s).forEach(el => el.remove());
     });
 
-    // 4. "Aç" və ya "Open" yazılan elementləri təmizlə
+    // 4. "Tətbiqi Aç" düymələrini söküb at
     document.querySelectorAll('button, a').forEach(el => {
         const txt = el.innerText.toLowerCase();
         if (txt.includes('tətbiqi aç') || txt.includes('uygulamada aç') || txt.includes('open app')) {
