@@ -14,6 +14,39 @@ document.addEventListener('click', (e) => {
 Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
 Object.defineProperty(document, 'hidden', { get: () => false });
 
+// 3. Tam ekran idarəetmə funksiyası
+function toggleFullscreen() {
+    const player = document.querySelector('video');
+    if (!player) return;
+
+    if (!document.fullscreenElement) {
+        if (player.requestFullscreen) {
+            player.requestFullscreen();
+        } else if (player.webkitRequestFullscreen) {
+            player.webkitRequestFullscreen();
+        } else if (player.msRequestFullscreen) {
+            player.msRequestFullscreen();
+        }
+        
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
+// Düyməni tap və klik hadisəsini bağla
+const fsButton = document.querySelector('.ytp-fullscreen-button'); 
+if (fsButton) {
+    fsButton.addEventListener('click', toggleFullscreen);
+}
+
+// 4. Reklam bloklama və təmizlik dövrü
 setInterval(() => {
     const video = document.querySelector('video');
     const ad = document.querySelector('.ad-showing, .ad-interrupting');
@@ -44,7 +77,7 @@ setInterval(() => {
         }
     }
 
-    // 3. BANNER VƏ DİGƏR REKLAMLARI SİLMƏK
+    // BANNER VƏ DİGƏR REKLAMLARI SİLMƏK
     const selectors = [
         ".ytp-ad-overlay-container",
         "#player-ads",
@@ -57,12 +90,11 @@ setInterval(() => {
         "ytd-companion-slot-renderer"
     ];
 
-    // Mötərizə xətası burada idi, düzəldildi:
     selectors.forEach(s => {
         document.querySelectorAll(s).forEach(el => el.remove());
     });
 
-    // 4. "Aç" və ya "Open" yazılan elementləri təmizlə
+    // "Aç" və ya "Open" yazılan elementləri təmizlə
     document.querySelectorAll('button, a').forEach(el => {
         const txt = el.innerText.toLowerCase();
         if (txt.includes('aç') || txt.includes('open')) {
