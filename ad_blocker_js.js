@@ -1,5 +1,6 @@
 let manualPaused = false;
 
+// 1. Klik hadisəsini izlə
 document.addEventListener('click', (e) => {
     const video = document.querySelector('video');
     if (video) {
@@ -9,60 +10,64 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
+// 2. YouTube-un səhifə gizlənmə hadisələrini blokla
 Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
 Object.defineProperty(document, 'hidden', { get: () => false });
 
 setInterval(() => {
     const video = document.querySelector('video');
     const ad = document.querySelector('.ad-showing, .ad-interrupting');
+    
+    // YENİLƏNDİ: Reklamı atla düymələri üçün daha geniş selektor
     const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
 
     if (video) {
+        // REKLAM VARSA
         if (ad) {
             video.muted = true;
             video.playbackRate = 16; 
             manualPaused = false;
-            if (skipBtn) skipBtn.click();
+            
+            // Avtomatik Skip düyməsinə klik et
+            if (skipBtn) {
+                skipBtn.click();
+                console.log("Reklam avtomatik atlanıldı.");
+            }
+            
             if (isFinite(video.duration)) video.currentTime = video.duration;
-        } else {
+        } 
+        // REKLAM YOXDURSA
+        else {
             if (video.muted && !video.paused) video.muted = false;
             if (video.playbackRate > 2) video.playbackRate = 1;
+
             if (video.paused && !manualPaused && !video.ended) {
                 video.play().catch(() => {});
             }
         }
     }
 
-    // TƏKMİLLƏŞDİRİLMİŞ SİLMƏ SİYAHISI
+    // 3. BANNER VƏ DİGƏR REKLAMLARI SİLMƏK (Təkmilləşdirildi)
     const selectors = [
-        ".ytp-ad-overlay-container", 
+        ".ytp-ad-overlay-container", // Videonun içindəki alt banner
         "#player-ads",
         "ytd-ad-slot-renderer",
         "ytm-ad-slot-renderer",
         "ytm-promoted-item-renderer",
-        ".ytp-ad-image-overlay",
+        ".ytp-ad-image-overlay",      // Şəkilli bannerlər
         ".ytp-ad-overlay-image",
-        "#masthead-ad",
-        "ytd-companion-slot-renderer",
-        "ytm-upsell-dialog-renderer",
-        "ytm-open-app-receiver",
-        ".ui-smart-app-banner",
-        "tp-yt-paper-dialog",
-        ".mobile-topbar-header-endpoint", // Şəkildəki o yuxarı "Tətbiqi Aç" hissəsi
-        "button[aria-label='Uygulamayı Aç']", // Alternativ hədəf
-        "button[aria-label='Open App']"
+        "#masthead-ad",               // Ana səhifə reklamı
+        "ytd-companion-slot-renderer" // Videonun sağındakı/altındakı reklamlar
     ];
 
     selectors.forEach(s => {
         document.querySelectorAll(s).forEach(el => el.remove());
-    });
-
-    // Mətnlə təmizləmə hissəsi (daha rəsmi düymələr üçün)
-    document.querySelectorAll('.ytm-open-app-button, button, a').forEach(el => {
+    // "Aç" və ya "Open" yazılan hər şeyi silməyə davam et
+    document.querySelectorAll('button, a').forEach(el => {
         const txt = el.innerText.toLowerCase();
-        if (txt.includes('tətbiqi aç') || txt.includes('uygulamada aç') || txt.includes('open app')) {
-            el.closest('ytm-open-app-button')?.remove() || el.remove();
+        if (txt.includes('aç') || txt.includes('open')) {
+            el.remove();
         }
     });
 
-}, 200);
+}, 200); // 500ms-dən 200ms-ə endirildi ki, düyməni görən kimi bassın.
